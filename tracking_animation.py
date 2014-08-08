@@ -25,8 +25,8 @@ for f in files:
 	storms = trackblobs.find_storms(z1)
 	storm_list.append(storms)
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
+fig = plt.figure(figsize=(5,5))
+ax = fig.add_axes([0,0,1,1])
 axim = ax.imshow(z1, origin='lower')
 
 def init():
@@ -43,4 +43,7 @@ def animate(i):
 anim = animation.FuncAnimation(fig, animate, init_func=init,
                                frames=len(files), interval=20, blit=False)
 
+anim.save('animation.mp4', fps=5, 
+          extra_args=['-vcodec', 'h264', 
+                      '-pix_fmt', 'yuv420p'])
 plt.show()
