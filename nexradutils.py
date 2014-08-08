@@ -8,6 +8,11 @@ import os
 from matplotlib.mlab import griddata
 
 
+def lonlat2utm(lon, lat):
+	utmzone = int(1 + (lon + 180.0)/6.0)
+	p = pyproj.Proj(proj='utm', zone=utmzone, ellps='WGS84')
+	x, y = p(lon, lat)
+	return x,y, utmzone
 
 def utmbbox(lon, lat, rad, zone=None):
 	'''
@@ -158,6 +163,22 @@ def nexrad2utm(file, gridsize=100, product='BaseReflectivity', utmzone=None, wid
 	data['zmax'] = z[np.isfinite(z)].max()
 	return data
 			
+def pix4coord(x, y, grid_size, extent):
+	"""Utility function to calculate pixel index in frame
+	x, y: coordinates in the grid's units
+	grid_size: number of points in each dimension of (square) grid
+	extent: [xmin, xmax, ymin, ymax] in grid units
+	"""
+	xi = int(round(grid_size*(x - extent[0])/float(extent[1]-extent[0])))
+	yi = int(round(grid_size*(y - extent[2])/float(extent[3]-extent[2])))
+	xi = xi if xi < grid_size else grid_size -1
+	yi = yi if yi < grid_size else grid_size -1
+	xi = xi if xi >= 0 else 0
+	yi = yi if yi >= 0 else 0
+	return (xi, yi)
+
+
+
 def z2rgba(z, cmap='jet', zmin=5, zmax=65):
 	zscaled = (z - zmin)/(zmax-zmin)
 	c = plt.get_cmap(cmap)

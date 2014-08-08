@@ -10,7 +10,7 @@ import traceback
 
 host = 'tgftp.nws.noaa.gov'
 ftpfname = 'sn.last'
-dirname = 'SL.us008001/DF.of/DC.radar/DS.p19r0/SI.kdix'
+dirname = 'SL.us008001/DF.of/DC.radar/DS.p19r0/SI.kddc'
 localfile = '/tmp/nexradlast'
 localfile_nc = '/tmp/nexradlast.nc'
 local_dir = '/tmp'
@@ -47,7 +47,7 @@ finally:
 	ftp.close()
 	
 print "converting files"
-classpath = '/Users/ethan/dev/nexrad/toolsUI-4.3.jar'
+classpath = '/Users/ethan/insight/nexrad/toolsUI-4.3.jar'
 npz_files = []
 for fi in recent_files:
 	print fi
@@ -67,7 +67,7 @@ for fi in recent_files:
 		data['azimuth'] = np.array(ds.variables['azimuth'][:])
 		data['gate'] = np.array(ds.variables['gate'][:])
 		data['latitude'] = np.array(ds.variables['latitude'][:])
-		data['latitude'] = np.array(ds.variables['longitude'][:])
+		data['longitude'] = np.array(ds.variables['longitude'][:])
 		data['time'] = ds.time_coverage_end
 		print ds.time_coverage_end
 		data['station'] = ds.ProductStation
