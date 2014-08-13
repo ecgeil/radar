@@ -161,6 +161,7 @@ def nexrad2utm(file, gridsize=100, product='BaseReflectivity', utmzone=None, wid
 	data['z'] = z
 	data['zmin'] = z[np.isfinite(z)].min()
 	data['zmax'] = z[np.isfinite(z)].max()
+	data['zmean'] = z[np.isfinite(z)].mean()
 	return data
 			
 def pix4coord(x, y, grid_size, extent):

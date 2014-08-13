@@ -35,7 +35,7 @@ def gen_mask(shape):
 	mask = r2 <= rad2
 	return mask
 
-mask = gen_mask(im1.shape)
+
 
 
 def fill_coords(shape, offset_x, offset_y):
@@ -84,6 +84,7 @@ def coords_c0(shape, x):
 
 
 def errfun(x):
+	mask = gen_mask(im1.shape)
 	coords = fill_coords2(im1.shape, x[0],x[1])
 	im3 = map_coordinates(im1, coords)
 	diffim = (im2 - im3)
@@ -101,23 +102,44 @@ def errfun2(x):
 	err = np.sum(np.abs(diffim)*mask)/(np.product(im1.shape))
 	return err
 
-def errfun_warp(x, im1, im2):
+def errfun_warp(x, im1, im2, mask, reg_param=0.0):
+	mask = gen_mask(im1.shape)
 	x = np.array(x)
-	poly_deg = int(len(x)/2)**0.5
+	poly_deg = int(int(len(x)/2)**0.5)
 	coeffs_x = x[:len(x)/2].reshape((poly_deg,poly_deg))
 	coeffs_y = x[len(x)/2:].reshape((poly_deg,poly_deg))
 	coords = coords_c(im1.shape, coeffs_x, coeffs_y)
 	im3 = map_coordinates(im1, coords, order=1)
 	diffim = (im2 - im3)
 	err = np.sum(np.abs(diffim)*mask)/(np.product(im1.shape))
-	return err
 
-def displacement_warping(im1, im2, poly_deg):
+	nx, ny = np.meshgrid(range(poly_deg), range(poly_deg))
+	total_deg = nx+ny
+	weights = np.tile(total_deg.flatten(), 2)
+	penalty = np.sum(weights * np.abs(x))
+
+	return err + reg_param*penalty
+
+def warp_img(im, coeffs):
+	x = np.array(coeffs)
+	poly_deg = int(int(len(x)/2)**0.5)
+	coeffs_x = x[:len(x)/2].reshape((poly_deg,poly_deg))
+	coeffs_y = x[len(x)/2:].reshape((poly_deg,poly_deg))
+	coords = coords_c(im.shape, coeffs_x, coeffs_y)
+	im3 = map_coordinates(im, coords, order=1)
+
+	return im3
+
+def displacement_warping(im1, im2, poly_deg, reg_param=0.0, x0=None):
+	mask = gen_mask(im1.shape)
 	ncoeffs = 2*poly_deg**2
-	x0 = np.zeros(ncoeffs)
+	if x0 == None:
+		x0 = np.zeros(ncoeffs)
 	data = dict(im1=im1, im2=im2)
 	x1 = optimize.fmin_bfgs(errfun_warp, x0=x0, epsilon=0.01,
-			args=(im1, im2))
+			args=(im1, im2, mask, reg_param), disp=False)
+	#x1 = optimize.minimize(errfun_warp, x0=x0, method=method, options=dict(eps=0.01),
+	#				args=(im1,im2, mask, reg_param))['x']
 	c = coords_c0(im1.shape, x1)
 	vx, vy = c[1], c[0]
 	return (vx, vy, x1)

@@ -87,21 +87,22 @@ def shift_series(im, offsets):
 		stack[i] = shiftim(im, int(offsets[i][0]), int(offsets[i][1]))
 	return stack
 
-def accumulate(im, vx, vy, sx, sy, num_frames, num_trials=10, threshold=25):
+def accumulate(im, vx, vy, sx, sy, output_times, num_trials=10, threshold=20):
 	"""velocities mx, my per frame
 		standard deviations sx, sy
 	"""
+	num_frames = len(output_times)
 	imt = np.where(im > threshold, im/threshold, 0)
 	accum = np.zeros((num_frames,)+ im.shape)
 	for i in range(num_trials):
 		vxi = vx + sx*standard_normal()
 		vyi = vy + sy*standard_normal()
-		offsets = [[vxi*i, vyi*i] for i in range(num_frames)]
+		offsets = [[vxi*t, vyi*t] for t in output_times]
 		accum += shift_series(imt, offsets)
 
 	return np.clip(accum*(1.0/num_trials), 0.0, 1.0)
 
-def predict_prob(frames, frame_times, nout, interval):
+def predict_prob(frames, frame_times, output_times):
 	"""
 		frames: successive dBz images on rectangular grid
 		frame_times: times in some unit (e.g. seconds)
@@ -119,75 +120,36 @@ def predict_prob(frames, frame_times, nout, interval):
 	maxshift = 12
 	for i in range(nframes):
 		for j in range(i+1, nframes):
-			dt = frame_times[i] - frame_times[j]
+			dt = frame_times[j] - frame_times[i]
 			offset = findshift(frames[i], frames[j], maxshift)
 			if abs(max(offset)) > maxshift:
 				continue
 			print (i, j, offset, dt)
 			velocity = offset/dt
-			print velocity*interval
+			print velocity
 			velocities.append(velocity)
 	velocities = np.array(velocities)
 	(vx1, vy1) = velocities[:,0].mean(), velocities[:,1].mean()
-	velocities = velocities*interval
+	
 	vx = np.mean(velocities[:,0])
 	vy = np.mean(velocities[:,1])
-	sx = np.std(velocities[:,0])/denom + 0.2*abs(vx) + 0.05
-	sy = np.std(velocities[:,1])/denom + 0.2*abs(vy) + 0.05
+	sx = np.std(velocities[:,0])/denom + 0.2*abs(vx) + 0.002
+	sy = np.std(velocities[:,1])/denom + 0.2*abs(vy) + 0.002
 
 	print (vx, vy, sx, sy)
 
-	prob = accumulate(frames[last_idx], vx, vy, 1.5*sx, 1.5*sy, nout,
+	prob = accumulate(frames[last_idx], vx, vy, 1.5*sx, 1.5*sy, output_times,
 						num_trials=40)
 
 	return prob
 
 
-ef predict_prob2(frames, frame_times, output_times):
-	"""
-		frames: successive dBz images on rectangular grid
-
-		return: predicted probability on grid of the same shape as frames_z
-	"""
-	frame_times = np.array(frame_times)
-	nframes = len(frames)
-	last_idx = np.argmax(frame_times)
-	velocities = []
-	npairs = nframes*(nframes-1)/2
-	denom = npairs-1 if npairs > 1 else 1.0
-	maxshift = 12
-	for i in range(nframes):
-		for j in range(i+1, nframes):
-			dt = frame_times[i] - frame_times[j]
-			offset = findshift(frames[i], frames[j], maxshift)
-			if abs(max(offset)) > maxshift:
-				continue
-			print (i, j, offset, dt)
-			velocity = offset/dt
-			print velocity*interval
-			velocities.append(velocity)
-	velocities = np.array(velocities)
-	(vx1, vy1) = velocities[:,0].mean(), velocities[:,1].mean()
-	velocities = velocities*interval
-	vx = np.mean(velocities[:,0])
-	vy = np.mean(velocities[:,1])
-	sx = np.std(velocities[:,0])/denom + 0.2*abs(vx) + 0.05
-	sy = np.std(velocities[:,1])/denom + 0.2*abs(vy) + 0.05
-
-	print (vx, vy, sx, sy)
-
-	prob = accumulate(frames[last_idx], vx, vy, 1.5*sx, 1.5*sy, nout,
-						num_trials=40)
-
-	return prob
 
 
 class UniformPredictor(predictor.Predictor):
 	def predict_prob(self, times, frames, output_times, threshold=20):
-		last_idx = np.argmax(times)
-		last_frame = frames[last_idx]
-		prob = np.where(last_frame > threshold, 1.0, 0.0)
-		return [prob]*len(output_times)
+		prob = predict_prob(frames, times, output_times)
+		return prob
 
 	def predict(self, times, frames, output_times):
 		last_idx = np.argmax(times)
