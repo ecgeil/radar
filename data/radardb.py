@@ -14,6 +14,8 @@ import logging
 import json
 import heapq
 import time
+import random
+import string
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -105,7 +107,7 @@ def update_station(station_id, timelimit=3600, force_update = False):
 	if __auto_purge:
 		purge_old()
 	logger.info("Updating station %s, last %f seconds", station_id, timelimit)
-	local_dir = "/tmp/"
+	local_dir = "tmp/"
 	unix_epoch = datetime.strptime('1970-01-01 00:00:00', '%Y-%m-%d %H:%M:%S')
 	dirname = os.path.join(__ftppath, "SI."+station_id)
 
@@ -157,7 +159,8 @@ def update_station(station_id, timelimit=3600, force_update = False):
 				
 				unix_time = int((ftime - unix_epoch).total_seconds())
 
-				localfile_raw = os.path.join(local_dir, fi)
+				randstr = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+				localfile_raw = os.path.join(local_dir, fi + randstr)
 				if False:
 					continue
 				with open(localfile_raw, 'w') as f: #download
@@ -165,10 +168,10 @@ def update_station(station_id, timelimit=3600, force_update = False):
 					ftp.retrbinary('RETR ' + fi, f.write)
 
 				
-				localfile_nc = os.path.join(local_dir, fi + '.nc')
+				localfile_nc = os.path.join(local_dir, fi + '_' + randstr + '.nc')
 
 				#path to java conversion tool
-				classpath = '/Users/ethan/insight/nexrad/toolsUI-4.3.jar'
+				classpath = 'java/toolsUI-4.3.jar'
 				args = ['-classpath', classpath, 'ucar.nc2.FileWriter', '-in', localfile_raw, '-out', localfile_nc]
 
 				#convert to netcdf
@@ -239,6 +242,9 @@ def update_station(station_id, timelimit=3600, force_update = False):
 										   %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 										
 							""", params)
+				logger.info("Cleaning up")
+				os.remove(localfile_raw)
+				os.remove(localfile_nc)
 
 			
 			#modify last update time
