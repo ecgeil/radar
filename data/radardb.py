@@ -27,9 +27,12 @@ __host = 'tgftp.nws.noaa.gov'
 __ftppath = 'SL.us008001/DF.of/DC.radar/DS.p19r0/'
 __auto_purge = True
 
+__user = 'root'
+__password = ''
+
 def create_frames_table():
 	"""This table stores the actual frame data"""
-	con = pymysql.connect(user='root')
+	con = pymysql.connect(user='root', passwd=__password)
 	with con:
 		curs = con.cursor()
 
@@ -65,7 +68,7 @@ def create_frames_table():
 
 		
 def create_updates_table():
-	con = pymysql.connect(user='root')
+	con = pymysql.connect(user='root', passwd=__password)
 	with con:
 		curs = con.cursor()
 		curs.execute('USE %s' % __dbname)
@@ -81,7 +84,7 @@ def create_updates_table():
 
 def needs_update(station_id, timelimit=180):
 	"""Check if station needs to be updated"""
-	con = pymysql.connect(user='root')
+	con = pymysql.connect(user='root', passwd=__password)
 	with con:
 		curs = con.cursor()
 		curs.execute('USE %s' % __dbname)
@@ -111,7 +114,7 @@ def update_station(station_id, timelimit=3600, force_update = False):
 	unix_epoch = datetime.strptime('1970-01-01 00:00:00', '%Y-%m-%d %H:%M:%S')
 	dirname = os.path.join(__ftppath, "SI."+station_id)
 
-	con = pymysql.connect(user='root')
+	con = pymysql.connect(user='root', passwd=__password)
 	with con:
 		curs = con.cursor()
 		curs.execute('USE %s' % __dbname)
@@ -274,7 +277,7 @@ def update_stations(station_list):
 
 def purge_old(timelimit = 7200):
 	"""drop frames older than timelimit (seconds)"""
-	con = pymysql.connect(user='root')
+	con = pymysql.connect(user='root', passwd=__password)
 	logger.info("purging frames older than %d seconds" % timelimit)
 	with con:
 		curs = con.cursor()
