@@ -1,0 +1,20 @@
+select a.recipe_id, b.recipe_name, sum(c.ingredient_price)
+from recipe_ingredients as a
+join recipes as b
+on a.recipe_id = b.recipe_id
+join ingredients as c
+on c.ingredient_id = a.ingredient_id
+group by 1
+order by 3
+
+
+select a.recipe_id, b.recipe_name, count(1) as num_ingredients
+from recipe_ingredients as a
+join recipes as b
+on a.recipe_id = b.recipe_id
+join ingredients as c
+on c.ingredient_id = a.ingredient_id
+group by a.recipe_id
+having num_ingredients = 2
+
+
