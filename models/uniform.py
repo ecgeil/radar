@@ -97,7 +97,7 @@ def find_velocity(times, frames, maxshift=10):
 				continue
 			denom += 1
 			print (i, j, offset, dt)
-			velocity = offset/dt
+			velocity = -offset/dt
 			velocities.append(velocity)
 
 	denom = min(1, denom-1)
@@ -105,8 +105,8 @@ def find_velocity(times, frames, maxshift=10):
 	(vx1, vy1) = velocities[:,0].mean(), velocities[:,1].mean()
 	vx = np.mean(velocities[:,0])
 	vy = np.mean(velocities[:,1])
-	sx = np.std(velocities[:,0])/denom + 0.2*abs(vx) + 1e-4
-	sy = np.std(velocities[:,1])/denom + 0.2*abs(vy) + 1e-4
+	sx = np.std(velocities[:,0])/denom + 0.2*abs(vx) + 5e-4
+	sy = np.std(velocities[:,1])/denom + 0.2*abs(vy) + 5e-4
 	return (vx, vy, sx, sy)
 
 def extrapolate_prob(im, vx, vy, sx, sy, output_times, threshold, num_trials=100):
@@ -162,7 +162,7 @@ def extrapolate(im, vx, vy, sx, sy, output_times, num_trials=100):
 	return prob*(1.0/num_trials)
 
 class UniformVelocityPredictor(predictor.Predictor):
-	def predict_prob(self, times, frames, output_times, threshold=25):
+	def predict_prob(self, times, frames, output_times, threshold=20):
 		last_idx = np.argmax(times)
 		last_frame = frames[last_idx]
 		vx, vy, sx, sy = find_velocity(times, frames)
@@ -183,4 +183,4 @@ class UniformVelocityPredictor(predictor.Predictor):
 		return pred
 
 
-		return prob
+		

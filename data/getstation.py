@@ -3,7 +3,7 @@ from pyproj import Geod
 
 
 def nearest_station(lon, lat):
-	with open('nexrad_stations.json') as f:
+	with open('data/nexrad_stations.json') as f:
 		stations = json.load(f)
 
 	g = Geod(ellps='WGS84')

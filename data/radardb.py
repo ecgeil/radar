@@ -321,6 +321,7 @@ def get_latest(station_id, num_frames=5, update=True):
 			data['xmax'] = row[9]
 			data['ymin'] = row[10]
 			data['ymax'] = row[11]
+			data['extent'] = [data['xmin'], data['xmax'], data['ymin'], data['ymax']]
 			data['z'] = np.load(StringIO.StringIO(row[12]))
 			frames.append(data)
 

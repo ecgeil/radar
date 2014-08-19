@@ -5,8 +5,9 @@ import subprocess
 from subprocess import call
 import os
 from datetime import datetime
-import nexradutils
-import fieldshift
+from data import nexradutils
+from data import radardb
+from models import uniform
 import pyproj
 
 import time
@@ -83,26 +84,29 @@ def download_latest(station, local_dir, timelimit=1800):
 
 	return local_files, times
 
-def build_prediction(station, nframes, interval):
-	global debug_frames
-	files, frame_times = download_latest(station, '/tmp', timelimit=1800)
+def build_prediction(station, nframes=12, interval=300, prev_frames=4):
+	frames = radardb.get_latest(station, prev_frames)
+	z = np.array([f['z'] for f in frames])
+	frame_times = np.array([f['unix_time'] for f in frames])
 
-	frames = []
-	for fi in files:
-		data = nexradutils.nexrad2utm(fi,gridsize=200)
-		ftime = datetime.strptime(data['time'], '%Y-%m-%dT%H:%M:%SZ')
-		z = np.nan_to_num(data['z'])
-		print z.max()
-		frames.append(z)
+	#Sort in ascending time order
+	sa = np.argsort(frame_times)
+	frame_times = frame_times[sa]
+	z = z[sa]
 
-	debug_frames = frames
-	prob = fieldshift.predict_prob(frames, frame_times, nframes, interval)
+	p_uniform = uniform.UniformVelocityPredictor()
+	output_times = np.array([1.0*interval*i for i in range(nframes)])
+	rel_times = frame_times - frame_times[-1]
+	print rel_times
+	prob = p_uniform.predict_prob(rel_times, z, output_times)
 
 	pred = {}
 	pred['prob'] = prob
-	pred['extent'] = data['extent']
+	pred['prev_z'] = z
+	pred['prev_t'] = rel_times
+	pred['extent'] = frames[0]['extent']
 	pred['interval'] = interval
-	pred['start_time'] = ftime
+	pred['start_time'] = frame_times[-1]
 
 	return pred
 
@@ -122,5 +126,5 @@ def specific_prediction(station='kddc', nframes=20, interval=180, lon=-97.9297, 
 
 	#plt.show()
 	times = [interval/60. * i for i in range(nframes)]
-	return times, trace
+	return times, trace, pred
 
