@@ -28,7 +28,7 @@ __ftppath = 'SL.us008001/DF.of/DC.radar/DS.p19r0/'
 __auto_purge = True
 
 __user = 'root'
-__password = ''
+__password = 'root'
 
 def create_frames_table():
 	"""This table stores the actual frame data"""
@@ -296,7 +296,7 @@ def purge_old(timelimit = 7200):
 def get_latest(station_id, num_frames=5, update=True):
 	if update:
 		update_station(station_id)
-	con = pymysql.connect(user='root')
+	con = pymysql.connect(user='root', passwd=__password)
 	logger.info("Fetching frames from %s", station_id)
 	with con:
 		curs = con.cursor()
