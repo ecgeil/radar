@@ -163,7 +163,7 @@ def update_station(station_id, timelimit=3600, force_update = False):
 				unix_time = int((ftime - unix_epoch).total_seconds())
 
 				randstr = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
-				localfile_raw = os.path.join(local_dir, fi + randstr)
+				localfile_raw = os.path.join(local_dir, fi + randstr + ".raw")
 				if False:
 					continue
 				with open(localfile_raw, 'w') as f: #download
