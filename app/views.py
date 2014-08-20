@@ -16,6 +16,7 @@ import os
 def location_page():
 	return render_template('locator.html')
 
+@app.route("/rain",  methods=['POST', 'GET'])
 @app.route("/forecast",  methods=['POST', 'GET'])
 def forecast_page():
 	if request.method == 'POST':
