@@ -1,0 +1,1 @@
+Directory to store temporary raw and netCDF files

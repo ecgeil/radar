@@ -171,6 +171,7 @@ def update_station(station_id, timelimit=3600, force_update = False):
 					ftp.retrbinary('RETR ' + fi, f.write)
 
 				
+				
 				localfile_nc = os.path.join(local_dir, fi + '_' + randstr + '.nc')
 
 				#path to java conversion tool

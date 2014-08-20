@@ -54,6 +54,8 @@ def shift_indices(n, shift):
 		xf2 = n + shift
 	return (xi1, xi2, xf1, xf2)
 
+
+
 def findshift(im1, im2, maxshift=8):
 	"""Compute shift from im1 to im2"""
 	m = gen_mask(im1.shape)

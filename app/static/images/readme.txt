@@ -1,0 +1,1 @@
+Directory from which plots and other images are served
