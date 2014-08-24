@@ -12,7 +12,7 @@ from utils import genmask
 
 
 def gen_mask(shape):
-	rad2 = 1.0
+	rad2 = 0.9
 	x = np.linspace(-1,1,shape[1])
 	y = np.linspace(-1,1,shape[0])
 	xx,yy= np.meshgrid(x,y)
@@ -96,7 +96,8 @@ def errfun_warp(x, im1, im2, mask, reg_param=0.0):
 	coords = coords_c(im1.shape, coeffs_x, coeffs_y)
 	im3 = map_coordinates(im1, coords, order=1)
 	diffim = (im2 - im3)
-	err = np.sum(np.abs(diffim)*mask)/(np.product(im1.shape))
+	#err = np.sum(np.abs(diffim)*mask)/(np.product(im1.shape))
+	err = np.sum(diffim**2*mask)/(np.product(im1.shape))
 
 	nx, ny = np.meshgrid(range(poly_deg), range(poly_deg))
 	total_deg = nx+ny
@@ -104,6 +105,62 @@ def errfun_warp(x, im1, im2, mask, reg_param=0.0):
 	penalty = np.sum(weights * np.abs(x))
 
 	return err + reg_param*penalty
+
+def chebderivs(shape, poly_deg):
+	ncoeffs = 2*poly_deg**2
+	
+	derivs = np.zeros((ncoeffs,2) + shape )
+
+	for i in range(ncoeffs):
+		coeffs = np.zeros(ncoeffs)
+		coeffs[i] = 1.0
+		derivs[i] = coords_c0(shape, coeffs)
+
+	return derivs
+
+
+def errfun_warp_deriv(x, im1, im2, mask, reg_param=0.0):
+	mask = gen_mask(im1.shape)
+	x = np.array(x)
+	ncoeffs = len(x)
+	poly_deg = int(int(len(x)/2)**0.5)
+	coeffs_x = x[:len(x)/2].reshape((poly_deg,poly_deg))
+	coeffs_y = x[len(x)/2:].reshape((poly_deg,poly_deg))
+	coords = coords_c(im1.shape, coeffs_x, coeffs_y)
+	gx, gy = np.gradient(im1)
+	im3 = map_coordinates(im1, coords, order=1)
+	gx = map_coordinates(gx, coords, order=1)
+	gy = map_coordinates(gy, coords, order=1)
+	diffim = (im2 - im3)
+
+	cd = chebderivs(im1.shape, poly_deg)
+
+	derivs = np.zeros(ncoeffs)
+	for i in range(ncoeffs):
+		gradim = gy*cd[i,1] + gx*cd[i,0]
+		derivs[i] = np.sum(-2.0*mask*diffim*gradim)/np.prod(im1.shape)
+
+	nx, ny = np.meshgrid(range(poly_deg), range(poly_deg))
+	total_deg = nx+ny
+	weights = np.tile(total_deg.flatten(), 2)
+	penalty = weights * np.sign(x)
+
+
+	return derivs + reg_param*penalty
+	
+
+
+def errfun_warp_nderiv(x, im1, im2, mask, reg_param=0.0, eps=1e-4):
+	nx = len(x)
+	derivs = np.zeros(nx)
+	for i in range(nx):
+		dx = np.zeros(nx)
+		dx[i] = eps
+		derivs[i] = (errfun_warp(x+dx, im1, im2, mask, reg_param) -
+					errfun_warp(x-dx, im1, im2, mask, reg_param))/(2.0*eps)
+
+	return derivs
+
 
 def warp_img(im, coeffs):
 	x = np.array(coeffs)
@@ -121,10 +178,10 @@ def displacement_warping(im1, im2, poly_deg, reg_param=0.0, x0=None):
 	if x0 == None:
 		x0 = np.zeros(ncoeffs)
 	data = dict(im1=im1, im2=im2)
-	x1 = optimize.fmin_bfgs(errfun_warp, x0=x0, epsilon=0.01,
-			args=(im1, im2, mask, reg_param), disp=False)
-	#x1 = optimize.minimize(errfun_warp, x0=x0, method=method, options=dict(eps=0.01),
-	#				args=(im1,im2, mask, reg_param))['x']
+	#x1 = optimize.fmin_bfgs(errfun_warp, x0=x0, epsilon=0.01,
+	#		args=(im1, im2, mask, reg_param), disp=False)
+	x1 = optimize.fmin_bfgs(errfun_warp, x0=x0, fprime=errfun_warp_deriv,
+			args=(im1, im2, mask, reg_param), disp=True)
 	c = coords_c0(im1.shape, x1)
 	vx, vy = c[1], c[0]
 	return (vx, vy, x1)
@@ -141,7 +198,7 @@ def extrapolate(im, coeffs, output_times):
 if __name__ == '__main__' and True:
 	vx, vy, coeffs = displacement_warping(im1, im2, 2), interpolation.zoom(vy, 0.1)
 
-	vx1, vy1 = interpolation.zoom(vx, 0.1)
+	vx1, vy1 = interpolation.zoom(vx, 0.1), interpolation.zoom(vy, 0.1)
 	vy1 = interpolation.zoom(vy, 0.1)
 
 	plt.figure()
