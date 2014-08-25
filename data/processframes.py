@@ -271,7 +271,7 @@ class FrameSource:
 if __name__ == '__main__':
 	fs = FrameSource()
 	n1 = 2000
-	n2 = n1+10
+	n2 = n1+20
 	z = []
 	zs = []
 	zp = []
@@ -280,7 +280,7 @@ if __name__ == '__main__':
 		print i
 		zi = fs.get_frame(i)['z']
 		ti = fs.get_frame(i)['time_unix']
-		zsi = interpolation.zoom(filters.gaussian_filter(zi,1.2),0.25)
+		zsi = interpolation.zoom(filters.gaussian_filter(zi,1.8),0.25)
 		zpi = patch_out(zsi)
 		z.append(zi)
 		zs.append(zsi)

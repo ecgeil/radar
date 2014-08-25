@@ -1,11 +1,11 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from numpy.polynomial import chebyshev as C
-from PIL import Image
+
 from scipy import optimize
 from scipy.ndimage import interpolation
 from scipy.ndimage.interpolation import geometric_transform
 from scipy.ndimage.interpolation import map_coordinates
+from scipy.ndimage import filters
 import itertools
 from utils.genmask import genmask
 
@@ -117,6 +117,50 @@ class Warp:
 			pred[i] =self.warpim(im, coeffs*t)
 
 		return pred
+
+	def predict(self, times, frames, output_times):
+		nf = len(frames)
+		nout = len(output_times)
+		ntest = nf*(nf-1)/2
+		coeffs_set = np.zeros((ntest, self.ncoeffs))
+		trial = 0
+
+		zs = np.zeros((nf,) + self.shape)
+		zoom_factor = 1.0*self.shape[0]/frames[0].shape[0]
+
+		for i in range(nf):
+			zs[i] = interpolation.zoom(filters.gaussian_filter(frames[i],1.5),zoom_factor)
+
+		for i in range(nf):
+			for j in range(i+1,nf):
+				print (i,j)
+				dt = times[j] - times[i]
+				vx, vy, coeffs = self.findwarp(zs[i],zs[j])
+				coeffs_set[trial] = coeffs/dt
+				trial += 1
+
+		#denom = (1.0/(ntest-1)) if ntest > 1 else 1.0
+		denom = 1.0
+		coeffs_mean = np.mean(coeffs_set, axis=0)/zoom_factor
+		coeffs_std = np.std(coeffs_set, axis=0)/zoom_factor * denom
+
+		print coeffs_mean[0], coeffs_mean[self.ncoeffs/2]
+		print np.mean(coeffs_std)
+
+
+		last_idx = np.argmax(times)
+		z0 = frames[last_idx]
+
+		output_dt = np.array(output_times) - times[last_idx]
+
+		accum = self.warpseq(z0, coeffs_mean, output_dt)
+		spread = 1.0*np.sum(coeffs_std**2)**0.5/2
+		for i in range(nout):
+			accum[i] = filters.gaussian_filter(accum[i], spread*output_dt[i])
+
+
+		return accum
+
 
 
 
