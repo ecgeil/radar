@@ -227,10 +227,11 @@ def random_sample_multi(predictors, npast=4, maxpts=1000):
 				
 				preds.append(pred)
 
-			frac = 0.01
+			frac = 0.005
 			#p_act = zinterp > threshold
 			p_act = zinterp
 			sample = (np.random.random(fs.shape) > (1 - frac))*mask
+			
 			
 
 			sample_els = np.sum(sample)
