@@ -16,6 +16,10 @@ import os
 def location_page():
 	return render_template('locator.html')
 
+@app.route('/slides')
+def slides_page():
+        return redirect(url_for('static', filename='slides.html'))
+
 @app.route("/rain",  methods=['POST', 'GET'])
 @app.route("/forecast",  methods=['POST', 'GET'])
 def forecast_page():
@@ -24,7 +28,7 @@ def forecast_page():
 		loc = request.form['location']
 		coords = geocode.geocode(loc)
 		if coords == None:
-			return "Couldn't parse location"
+			return "Sorry, we couldn't locate that address!"
 		lon, lat = coords
 		station, dist = getstation.nearest_station(lon, lat)
 		print "station: " + station
