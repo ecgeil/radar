@@ -2,7 +2,8 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
-import local_prediction
+#import local_prediction
+import localpred2
 from data import nexradutils
 from scipy.ndimage import filters
 import time
@@ -11,8 +12,10 @@ from pyproj import Proj
 logit = lambda x: 1.0/(1+np.exp(-x))
 
 def makeplot(lon, lat, fpath, station='kdix'):
-	times, prob, pred = local_prediction.specific_prediction(station, 
-					nframes=22, interval=180, lon=lon,lat=lat)
+	#times, prob, pred = local_prediction.specific_prediction(station, 
+	#				nframes=22, interval=180, lon=lon,lat=lat)
+	times, prob, pred = localpred2.point_prediction(station, 
+					nframes=20, interval=180, lon=lon,lat=lat)
 	fig = plt.figure(figsize=(6,4))
 	ax = fig.add_subplot(111)
 
