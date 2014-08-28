@@ -202,7 +202,7 @@ def random_sample_multi(predictors, npast=4, maxpts=1000):
 			rain_area = 1.0*np.sum(f1['z'] > threshold) / mask_els
 			rain_sum += rain_area
 			print start_idx, rain_area
-			if rain_area < 0.02:
+			if rain_area < 0.00:
 				print "skipping"
 				continue
 
@@ -231,7 +231,7 @@ def random_sample_multi(predictors, npast=4, maxpts=1000):
 			#p_act = zinterp > threshold
 			p_act = zinterp
 			sample = (np.random.random(fs.shape) > (1 - frac))*mask
-			
+
 			
 
 			sample_els = np.sum(sample)
@@ -249,6 +249,7 @@ def random_sample_multi(predictors, npast=4, maxpts=1000):
 				pts_count += 1
 
 		data = {}
+		
 		data['pred_times'] = np.array(pred_times)
 		data['zinterp'] = zinterp
 		data['preds'] = np.array(preds)

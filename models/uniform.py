@@ -158,8 +158,12 @@ def extrapolate(im, vx, vy, sx, sy, output_times, num_trials=100):
 			off_x = int(round(off_x))
 			off_y = int(round(off_y))
 
+			if abs(off_x) < 0.5*im.shape[1] and abs(off_y) < 0.5*im.shape[0]:
+				shifted = shiftim(im, off_x, off_y)
+			else:
+				shifted = np.zeros(im.shape) 
 
-			shifted = shiftim(im, off_x, off_y)
+			
 			prob[i] += shifted
 
 
