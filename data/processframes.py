@@ -271,6 +271,7 @@ class FrameSource:
 if __name__ == '__main__':
 	fs = FrameSource()
 	n1 = 2000
+	n1 = 18330
 	n2 = n1+20
 	z = []
 	zs = []

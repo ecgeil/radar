@@ -1,5 +1,5 @@
 from flask import render_template
-from flask import request
+from flask import request, redirect, url_for
 from flask import send_from_directory
 from app import app
 from data import geocode
@@ -8,6 +8,7 @@ from forecast import makeplot
 from data import getstation
 import time
 import os
+import logging
 
 
 
@@ -15,6 +16,10 @@ import os
 @app.route("/radar",)
 def location_page():
 	return render_template('locator.html')
+
+@app.route('/slides')
+def slides_page():
+        return redirect(url_for('static', filename='slides.html'))
 
 @app.route("/rain",  methods=['POST', 'GET'])
 @app.route("/forecast",  methods=['POST', 'GET'])
@@ -24,9 +29,14 @@ def forecast_page():
 		loc = request.form['location']
 		coords = geocode.geocode(loc)
 		if coords == None:
-			return "Couldn't parse location"
+			return "Sorry, we couldn't locate that address!"
 		lon, lat = coords
 		station, dist = getstation.nearest_station(lon, lat)
+		if dist > 240e3:
+			return ("Sorry, there are no radar sites near the location '%s' <br> at (%f E, %f N)" %
+					(loc, lon, lat))
+
+		logging.info("Nearest station is %s, %f km away" % (station, dist/1e3))
 		print "station: " + station
 		fname = time.strftime('%Y%m%d-%H%M%S') + ".png"
 		#fname = "test.png"

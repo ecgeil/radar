@@ -170,6 +170,7 @@ def extrapolate(im, vx, vy, sx, sy, output_times, num_trials=100):
 	return prob*(1.0/num_trials)
 
 class UniformVelocityPredictor(predictor.Predictor):
+	'''ABSOLUTE output times'''
 	def predict_prob(self, times, frames, output_times, threshold=20):
 		last_idx = np.argmax(times)
 		last_frame = frames[last_idx]

@@ -119,6 +119,7 @@ class Warp:
 		return pred
 
 	def predict(self, times, frames, output_times):
+		'''Absolute output times'''
 		nf = len(frames)
 		nout = len(output_times)
 		ntest = nf*(nf-1)/2
