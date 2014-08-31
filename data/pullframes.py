@@ -76,6 +76,9 @@ def get_latest(station_id, num_frames):
 		recent_times = recent_times[:num_frames]
 
 		logging.info("Grabbing %d files", len(recent_files))
+
+		if len(recent_files) == 0:
+			logger.info("The station % seems to be down--there are no recent frames.", station_id)
 		
 		frames = []
 		for i,fi in enumerate(recent_files):

@@ -55,6 +55,7 @@ def makeplot(lon, lat, fpath, station='kdix'):
 			fig.savefig("pred1.png")
 
 			logging.info( "figure saved at %s", fpath)
+			return "success"
 		else:
 			logging.error("Couldn't get prediction")
 
@@ -62,7 +63,10 @@ def makeplot(lon, lat, fpath, station='kdix'):
 			ax = fig.add_subplot(111)
 			ax.plot([0,1],[0,1], 'r')
 			ax.text(0.5,0.5, "?", fontsize=72)
+			ax.text(0.01, 0.2, "Sorry, I couldn't generate a forecast for that location.")
+			ax.text(0.01, 0.1, "The local radar station may be down.")
 			fig.savefig(fpath, transparent=True, dpi=200)
+			return "failure"
 	except Exception, e:
 		logging.exception(e)
 	finally:

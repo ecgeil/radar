@@ -19,8 +19,7 @@ import string
 from mysql import connector
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+
 
 
 
@@ -39,7 +38,7 @@ def create_frames_table():
 		con = connector.connect(user='root', passwd=__password)
 		curs = con.cursor()
 
-		logger.info('Creating frames table')
+		logging.info('Creating frames table')
 		curs.execute('USE %s' % __dbname)
 
 		schema = '''CREATE TABLE IF NOT EXISTS
@@ -82,7 +81,7 @@ def create_updates_table():
 		curs = con.cursor()
 		curs.execute('USE %s' % __dbname)
 
-		logger.info('Creating updates table')
+		logging.info('Creating updates table')
 		schema = """CREATE TABLE IF NOT EXISTS
 					updates(station_id CHAR(4) NOT NULL,
 							update_time DATETIME,
@@ -123,12 +122,12 @@ def needs_update(station_id, timelimit=180):
 def update_station(station_id, timelimit=3600, force_update = False):
 	if not force_update:
 		if not needs_update(station_id):
-			logger.info("station %s is up to date", station_id)
+			logging.info("station %s is up to date", station_id)
 			return
 
 	if __auto_purge:
 		purge_old()
-	logger.info("Updating station %s, last %f seconds", station_id, timelimit)
+	logging.info("Updating station %s, last %f seconds", station_id, timelimit)
 	local_dir = "tmp/"
 	unix_epoch = datetime.strptime('1970-01-01 00:00:00', '%Y-%m-%d %H:%M:%S')
 	dirname = os.path.join(__ftppath, "SI."+station_id)
@@ -141,7 +140,7 @@ def update_station(station_id, timelimit=3600, force_update = False):
 		curs = con.cursor()
 		curs.execute('USE %s' % __dbname)
 
-		logger.info("Connecting to host %s", __host)
+		logging.info("Connecting to host %s", __host)
 		ftp = None
 		ftp = FTP(__host, timeout=10) #connect to FTP server
 		ftp.login()
@@ -169,7 +168,9 @@ def update_station(station_id, timelimit=3600, force_update = False):
 				recent_files.append(fname)
 				recent_times.append(ftime)
 		
-		logger.info("Updating %d files", len(recent_files))
+		if len(recent_files) == 0:
+			logging.info("The station % seems to be down--there are no recent frames.", station_id)
+		logging.info("Updating %d files", len(recent_files))
 		for i,fi in enumerate(recent_files):
 			ftime = recent_times[i]
 			sql_timestamp = ftime.strftime('%Y-%m-%d %H:%M:%S')
@@ -178,7 +179,7 @@ def update_station(station_id, timelimit=3600, force_update = False):
 			nfound = curs.fetchone()[0]
 
 			if nfound > 0:
-				logger.info("skipping " + station_id + " " + sql_timestamp)
+				logging.info("skipping " + station_id + " " + sql_timestamp)
 				continue
 			
 			unix_time = int((ftime - unix_epoch).total_seconds())
@@ -188,7 +189,7 @@ def update_station(station_id, timelimit=3600, force_update = False):
 			if False:
 				continue
 			with open(localfile_raw, 'w') as f: #download
-				logger.debug("retrieving to " + localfile_raw)
+				logging.debug("retrieving to " + localfile_raw)
 				ftp.retrbinary('RETR ' + fi, f.write)
 
 			
@@ -200,7 +201,7 @@ def update_station(station_id, timelimit=3600, force_update = False):
 			args = ['-classpath', classpath, 'ucar.nc2.FileWriter', '-in', localfile_raw, '-out', localfile_nc]
 
 			#convert to netcdf
-			logger.debug("converting to netCDF4: " + localfile_nc)
+			logging.debug("converting to netCDF4: " + localfile_nc)
 			p = subprocess.Popen(['java'] + args, stdout=subprocess.PIPE)
 			#wait for process to complete
 			p.wait()
@@ -210,7 +211,7 @@ def update_station(station_id, timelimit=3600, force_update = False):
 			nx = gridsize
 			ny = gridsize
 
-			logger.debug("gridding data; grid size = %d" % gridsize)
+			logging.debug("gridding data; grid size = %d" % gridsize)
 			data = nexradutils.nexrad2utm(localfile_nc,gridsize=200)
 
 			scaling = 1.0
@@ -267,7 +268,7 @@ def update_station(station_id, timelimit=3600, force_update = False):
 									   %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 									
 						""", params)
-			logger.info("Cleaning up")
+			logging.info("Cleaning up")
 			os.remove(localfile_raw)
 			os.remove(localfile_nc)
 
@@ -296,7 +297,7 @@ def update_stations(station_list):
 def purge_old(timelimit = 7200):
 	"""drop frames older than timelimit (seconds)"""
 	
-	logger.info("purging frames older than %d seconds" % timelimit)
+	logging.info("purging frames older than %d seconds" % timelimit)
 	con = None
 	try:
 		con = connector.connect(user='root', passwd=__password)
@@ -306,7 +307,7 @@ def purge_old(timelimit = 7200):
 						frame_datetime < ADDDATE(UTC_TIMESTAMP(), INTERVAL -%s SECOND)""",
 							[timelimit])
 		num_to_delete = curs.fetchone()[0]
-		logger.info("purging %d frames", num_to_delete)
+		logging.info("purging %d frames", num_to_delete)
 		
 		curs.execute( """DELETE FROM frames WHERE 
 						frame_datetime < ADDDATE(UTC_TIMESTAMP(), INTERVAL -%s SECOND)""", 
@@ -322,7 +323,7 @@ def get_latest(station_id, num_frames=5, update=True):
 	if update:
 		update_station(station_id)
 	
-	logger.info("Fetching frames from %s", station_id)
+	logging.info("Fetching frames from %s", station_id)
 	con = None
 	frames = []
 	try:
@@ -393,11 +394,11 @@ def continuous_update():
 			time.sleep(1.0)
 			continue
 
-		logger.info("updating %s" % station)
+		logging.info("updating %s" % station)
 		heapq.heappop(h)
 		frames = get_latest(station, num_frames=2)
 		if len(frames) == 0:
-			logger.debug("got 0 frames")
+			logging.debug("got 0 frames")
 			heapq.heappush(h, (time.time() + 10, station))
 			continue;
 
@@ -405,9 +406,9 @@ def continuous_update():
 
 		if frame['vcp'] in [31, 32]:
 			next_update = time.time() + 1000
-			logger.info("No rain, next update for %s in 1000 s" % station)
+			logging.info("No rain, next update for %s in 1000 s" % station)
 		else:
 			next_update = time.time() + 180
-			logger.info("Next update for %s in 180 s" % station)
+			logging.info("Next update for %s in 180 s" % station)
 
 		heapq.heappush(h, (next_update, station))

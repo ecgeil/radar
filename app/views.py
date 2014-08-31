@@ -42,10 +42,11 @@ def forecast_page():
 		#fname = "test.png"
 		fpath = 'app/static/images/' + fname
 		relpath = 'static/images/' + fname
-		makeplot.makeplot(lon, lat, fpath, station)
+		result = makeplot.makeplot(lon, lat, fpath, station)
 		locdict=dict(lon=coords[0], lat=coords[1])
-		return render_template('graphpage.html', loc=locdict, impath=relpath)
 
+		
+		return render_template('graphpage.html', loc=locdict, impath=relpath)
 
 	return location_page()
 
