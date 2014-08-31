@@ -3,7 +3,7 @@ from flask import request, redirect, url_for
 from flask import send_from_directory
 from app import app
 from data import geocode
-#import pymysql as mdb
+
 from forecast import makeplot
 from data import getstation
 import time

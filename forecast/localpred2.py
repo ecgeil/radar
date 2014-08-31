@@ -1,7 +1,9 @@
 import numpy as np
 from data import nexradutils
 from data import radardb
+from data import pullframes
 from models import distance, diffusion, warp, ensemble
+import logging
 
 
 
@@ -38,6 +40,23 @@ coeff_times = np.array([   0,  300,  600,  900, 1200, 1500, 1800, 2100, 2400, 27
 
 def station_prediction(station, nframes=12, interval=300, prev_frames=4):
 	frames = radardb.get_latest(station, prev_frames)
+	
+	if frames == None or len(frames) < 2:
+		logging.info("Couldn't get frames from radardb. station: %s", station)
+		logging.debug("Trying to get frames directly from NOAA FTP...")
+
+		for i in range(3):
+			logging.debug("Attempt %d of 3", i+1)
+			frames = pullframes.get_latest(station, prev_frames)
+			if frames and len(frames) > 1:
+				break
+
+	if frames == None or len(frames) < 2:
+		logging.error("Couldn't get frames from either source. Giving up.")
+		return None
+
+
+
 	z = np.array([f['z'] for f in frames])
 	frame_times = np.array([f['unix_time'] for f in frames])
 
@@ -63,22 +82,29 @@ def station_prediction(station, nframes=12, interval=300, prev_frames=4):
 	pred['prev_z'] = z
 	pred['prev_t'] = rel_times
 	pred['extent'] = frames[0]['extent']
+	pred['utmzone'] = frames[0]['utmzone']
 	pred['interval'] = interval
 	pred['start_time'] = frame_times[-1]
 
 	return pred
 
 def point_prediction(station='kddc', nframes=20, interval=180, lon=-97.9297, lat=38.0608):
-	x, y, utmzone = nexradutils.lonlat2utm(lon, lat)
+	
 
 	pred = station_prediction(station, nframes, interval)
-	gridsize = pred['prob'][0].shape[0]
-	print gridsize
-	print (x,y,utmzone)
-	print pred['extent']
-	px, py = nexradutils.pix4coord(x, y, gridsize, extent=pred['extent'])
-	print (px, py)
-	trace = pred['prob'][:,py,px]
-	
-	times = [interval/60. * i for i in range(nframes)]
-	return times, trace, pred
+
+	if pred:
+		x, y, utmzone = nexradutils.lonlat2utm(lon, lat, pred['utmzone'])
+		gridsize = pred['prob'][0].shape[0]
+		logging.debug("grid size: %s", str(gridsize))
+		logging.debug("prediction utm coords: x=%f, y = %f, zone=%d", x,y,utmzone)
+		logging.debug("prediction extent: (%f, %f, %f, %f)", *pred['extent'])
+		px, py = nexradutils.pix4coord(x, y, gridsize, extent=pred['extent'])
+		
+		trace = pred['prob'][:,py,px]
+		
+		times = [interval/60. * i for i in range(nframes)]
+		return times, trace, pred
+	else:
+		logging.error("Couldn't get station prediction")
+		return ([0], [0], None)

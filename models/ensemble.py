@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.interpolate import interp1d
+import logging
 
 
 
@@ -41,13 +42,13 @@ class Ensemble():
 		output_times = np.array(output_times)
 		times = np.array(times)
 		delta_times = output_times - np.max(times)
-		print delta_times
+		logging.debug("input frame ages: %s", str(delta_times))
 		if (np.max(delta_times) > np.max(self.ctimes) or 
 			np.min(delta_times) < np.min(self.ctimes)):
 			raise ValueError("prediction time is outside model calibration times")
 		fshape = frames[0].shape
 		nout = len(output_times)
-		print "nout: %d" % nout
+		logging.info( "nout: %d",  nout)
 		
 
 		pred = np.zeros((nout,) + fshape + (self.nmod,) )

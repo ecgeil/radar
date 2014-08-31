@@ -8,6 +8,7 @@ from scipy.ndimage.interpolation import map_coordinates
 from scipy.ndimage import filters
 import itertools
 from utils.genmask import genmask
+import logging
 
 def coords_c0(shape, x):
 	poly_deg = int(len(x)/2)**0.5
@@ -134,7 +135,6 @@ class Warp:
 
 		for i in range(nf):
 			for j in range(i+1,nf):
-				print (i,j)
 				dt = times[j] - times[i]
 				vx, vy, coeffs = self.findwarp(zs[i],zs[j])
 				coeffs_set[trial] = coeffs/dt
@@ -145,8 +145,8 @@ class Warp:
 		coeffs_mean = np.mean(coeffs_set, axis=0)/zoom_factor
 		coeffs_std = np.std(coeffs_set, axis=0)/zoom_factor * denom
 
-		print coeffs_mean[0], coeffs_mean[self.ncoeffs/2]
-		print np.mean(coeffs_std)
+		logging.info( "coeffs: %s,%s", str(coeffs_mean[0]), str(coeffs_mean[self.ncoeffs/2]))
+		logging.info( "coeffs mean: %s", str(np.mean(coeffs_std)))
 
 
 		last_idx = np.argmax(times)

@@ -6,10 +6,13 @@ import matplotlib.pyplot as plt
 import subprocess
 import os
 from matplotlib.mlab import griddata
+import logging
 
-
-def lonlat2utm(lon, lat):
-	utmzone = int(1 + (lon + 180.0)/6.0)
+def lonlat2utm(lon, lat, zone=None):
+	if zone is None:
+		utmzone = int(1 + (lon + 180.0)/6.0)
+	else:
+		utmzone = zone
 	p = pyproj.Proj(proj='utm', zone=utmzone, ellps='WGS84')
 	x, y = p(lon, lat)
 	return x,y, utmzone
@@ -76,6 +79,7 @@ def nexrad2utm(file, gridsize=100, product='BaseReflectivity', utmzone=None, wid
 	
 	#find utm bounding box around radar site
 	zone, xmin, ymin, xmax, ymax = utmbbox(lon, lat, rmax*1.0, zone=utmzone)
+	logging.debug("zone: %f, xmin: %f, xmax: %f, ymin: %f, ymax: %f", zone, xmin, xmax, ymin, ymax)
 	
 	#create a projection object to convert from lat/lon to UTM or vice-versa
 	proj = pyproj.Proj(proj='utm', zone=zone, ellps='WGS84')
@@ -94,7 +98,7 @@ def nexrad2utm(file, gridsize=100, product='BaseReflectivity', utmzone=None, wid
 			refl = np.clip(refl, 0, 75)
 		#interpolate product as a function of radius and azimuth
 		interp = interpolate.RectBivariateSpline(r, az, np.nan_to_num(refl.T))
-	else: #needs to be fixed
+	else: #needs to be fixed; only base and composite reflectivity currently work
 		naz = len(az)
 		zt = np.tile(refl, (2,1))
 		azt = np.zeros(naz*2)
